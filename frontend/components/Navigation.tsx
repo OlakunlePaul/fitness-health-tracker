@@ -1,9 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Activity, Home, Dumbbell, Apple, BarChart3, User } from 'lucide-react';
+import { Activity, Home, Dumbbell, Apple, BarChart3, User, LayoutDashboard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: Home },
+  { name: 'Home', href: '/', icon: Home },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Workouts', href: '/workouts', icon: Dumbbell },
   { name: 'Nutrition', href: '/nutrition', icon: Apple },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
@@ -17,10 +18,10 @@ export function Navigation() {
     <nav className="bg-card border-b">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center space-x-2">
+          <Link to="/" className="flex items-center space-x-2">
             <Activity className="h-8 w-8 text-primary" />
             <span className="text-xl font-bold text-foreground">FitTracker</span>
-          </div>
+          </Link>
           
           <div className="flex space-x-4">
             {navigation.map((item) => {
