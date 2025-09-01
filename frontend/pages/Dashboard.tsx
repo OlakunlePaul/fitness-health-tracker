@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Dumbbell, Apple, Target, TrendingUp, Clock, Flame, Calendar, Activity, Plus, Play } from 'lucide-react';
+import { Dumbbell, Apple, Target, TrendingUp, Clock, Flame, Calendar, Activity, Plus, Play, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import backend from '~backend/client';
 import { formatDate, formatDuration } from '../utils/date';
@@ -12,30 +12,129 @@ export function Dashboard() {
   const today = new Date().toISOString().split('T')[0];
   const userId = 1;
 
+  const { data: user } = useQuery({
+    queryKey: ['user', userId],
+    queryFn: () => backend.users.get({ id: userId }),
+    retry: false,
+  });
+
   const { data: workoutStats } = useQuery({
     queryKey: ['workoutStats', userId],
     queryFn: () => backend.analytics.getWorkoutStats({ userId, days: 7 }),
+    enabled: !!user,
   });
 
   const { data: nutritionStats } = useQuery({
     queryKey: ['nutritionStats', userId],
     queryFn: () => backend.analytics.getNutritionStats({ userId, days: 7 }),
+    enabled: !!user,
   });
 
   const { data: recentSessions } = useQuery({
     queryKey: ['recentSessions', userId],
     queryFn: () => backend.workouts.listSessions({ userId }),
+    enabled: !!user,
   });
 
   const { data: todayNutrition } = useQuery({
     queryKey: ['todayNutrition', userId, today],
     queryFn: () => backend.nutrition.getDailyLogs({ userId, date: today }),
+    enabled: !!user,
   });
 
   const { data: workoutTemplates } = useQuery({
     queryKey: ['workoutTemplates', userId],
     queryFn: () => backend.workouts.listTemplates({ userId }),
+    enabled: !!user,
   });
+
+  // Show profile creation prompt if user doesn't exist
+  if (!user) {
+    return (
+      <div className="space-y-8">
+        <div className="text-center space-y-4">
+          <h1 className="text-4xl font-bold text-foreground">Welcome to FitTracker</h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Get started by creating your profile to access your personalized dashboard.
+          </p>
+        </div>
+
+        <Card className="max-w-2xl mx-auto">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <User className="h-16 w-16 text-primary mb-6" />
+            <h2 className="text-2xl font-bold mb-4">Create Your Profile</h2>
+            <p className="text-muted-foreground text-center mb-6 max-w-md">
+              To access your dashboard and start tracking your fitness journey, you'll need to create a profile first.
+            </p>
+            <Button asChild size="lg">
+              <Link to="/profile">
+                <User className="h-5 w-5 mr-2" />
+                Create Profile
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Dumbbell className="h-5 w-5" />
+                <span>Track Workouts</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                Create workout templates, log your sessions, and track your exercise progress over time.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Apple className="h-5 w-5" />
+                <span>Monitor Nutrition</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                Log your meals, track macronutrients, and monitor your daily calorie intake.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <TrendingUp className="h-5 w-5" />
+                <span>View Analytics</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                Get detailed insights into your fitness progress with comprehensive analytics and charts.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Target className="h-5 w-5" />
+                <span>Set Goals</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                Define your fitness goals and track your progress towards achieving them.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   // Calculate daily calorie goal progress (assuming 2000 cal goal)
   const calorieGoal = 2000;
@@ -49,10 +148,10 @@ export function Dashboard() {
     <div className="space-y-8">
       {/* Hero Section */}
       <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold text-foreground">Welcome to FitTracker</h1>
+        <h1 className="text-4xl font-bold text-foreground">Welcome back, {user.name}!</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
           Your complete fitness companion for tracking workouts, nutrition, and progress. 
-          Start your journey to a healthier you today.
+          Keep up the great work on your fitness journey.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button asChild size="lg">
