@@ -7,14 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { User, Save, Target } from 'lucide-react';
-import backend from '~backend/client';
+import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import type { CreateUserRequest } from '~backend/users/create';
 
 export function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<CreateUserRequest>({
-    email: '',
     name: '',
     age: undefined,
     weightKg: undefined,
@@ -25,16 +24,16 @@ export function Profile() {
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const userId = 1;
+  const { backend } = useAuth();
 
   const { data: user } = useQuery({
-    queryKey: ['user', userId],
-    queryFn: () => backend.users.get({ id: userId }),
+    queryKey: ['user'],
+    queryFn: () => backend.users.get(),
     retry: false,
   });
 
   const createUserMutation = useMutation({
-    mutationFn: backend.users.create,
+    mutationFn: (data: CreateUserRequest) => backend.users.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user'] });
       setIsEditing(false);
@@ -117,17 +116,6 @@ export function Profile() {
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
                     placeholder="Enter your full name"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    placeholder="Enter your email"
                     required
                   />
                 </div>

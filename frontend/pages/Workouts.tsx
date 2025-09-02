@@ -5,25 +5,25 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Play, Clock, Dumbbell } from 'lucide-react';
-import backend from '~backend/client';
 import { formatDate, formatDuration } from '../utils/date';
 import { CreateWorkoutDialog } from '../components/CreateWorkoutDialog';
 import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '../contexts/AuthContext';
 
 export function Workouts() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const userId = 1;
+  const { backend } = useAuth();
 
   const { data: templates } = useQuery({
-    queryKey: ['workoutTemplates', userId],
-    queryFn: () => backend.workouts.listTemplates({ userId }),
+    queryKey: ['workoutTemplates'],
+    queryFn: () => backend.workouts.listTemplates(),
   });
 
   const { data: sessions } = useQuery({
-    queryKey: ['workoutSessions', userId],
-    queryFn: () => backend.workouts.listSessions({ userId }),
+    queryKey: ['workoutSessions'],
+    queryFn: () => backend.workouts.listSessions(),
   });
 
   const { data: exercises } = useQuery({
@@ -32,7 +32,7 @@ export function Workouts() {
   });
 
   const startSessionMutation = useMutation({
-    mutationFn: backend.workouts.startSession,
+    mutationFn: (data: { templateId?: number; name: string }) => backend.workouts.startSession(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workoutSessions'] });
       toast({
@@ -52,7 +52,6 @@ export function Workouts() {
 
   const handleStartWorkout = (templateId?: number, name: string = 'Quick Workout') => {
     startSessionMutation.mutate({
-      userId,
       templateId,
       name,
     });
@@ -180,7 +179,6 @@ export function Workouts() {
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
         exercises={exercises?.exercises || []}
-        userId={userId}
       />
     </div>
   );
