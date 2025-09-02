@@ -1,8 +1,8 @@
 import { api } from "encore.dev/api";
+import { getAuthData } from "~encore/auth";
 import { nutritionDB } from "./db";
 
 interface GetDailyLogsParams {
-  userId: number;
   date: string;
 }
 
@@ -35,10 +35,11 @@ export interface GetDailyLogsResponse {
   totalSodium: number;
 }
 
-// Retrieves nutrition logs for a specific date.
+// Retrieves nutrition logs for a specific date for the authenticated user.
 export const getDailyLogs = api<GetDailyLogsParams, GetDailyLogsResponse>(
-  { expose: true, method: "GET", path: "/nutrition/logs/:userId/:date" },
+  { expose: true, method: "GET", path: "/nutrition/logs/:date", auth: true },
   async (params) => {
+    const auth = getAuthData()!;
     const logs: DailyLogEntry[] = [];
     let totalCalories = 0;
     let totalProtein = 0;
@@ -65,7 +66,7 @@ export const getDailyLogs = api<GetDailyLogsParams, GetDailyLogsResponse>(
              nl.logged_at as "loggedAt", nl.notes
       FROM nutrition_logs nl
       JOIN foods f ON nl.food_id = f.id
-      WHERE nl.user_id = ${params.userId} 
+      WHERE nl.user_id = ${auth.userID} 
         AND nl.logged_at >= ${startDate}
         AND nl.logged_at < ${endDate}
       ORDER BY nl.logged_at DESC

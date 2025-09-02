@@ -1,10 +1,10 @@
 import { api } from "encore.dev/api";
+import { getAuthData } from "~encore/auth";
 import { SQLDatabase } from "encore.dev/storage/sqldb";
 
 const nutritionDB = SQLDatabase.named("nutrition");
 
 interface GetNutritionStatsParams {
-  userId: number;
   days?: number;
 }
 
@@ -28,10 +28,11 @@ export interface NutritionStats {
   }>;
 }
 
-// Retrieves nutrition statistics for a user.
+// Retrieves nutrition statistics for the authenticated user.
 export const getNutritionStats = api<GetNutritionStatsParams, NutritionStats>(
-  { expose: true, method: "GET", path: "/analytics/nutrition/:userId" },
+  { expose: true, method: "GET", path: "/analytics/nutrition", auth: true },
   async (params) => {
+    const auth = getAuthData()!;
     const days = params.days || 30;
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
@@ -56,7 +57,7 @@ export const getNutritionStats = api<GetNutritionStatsParams, NutritionStats>(
           SUM(f.fat_per_100g * nl.serving_size_grams / 100) as daily_fat
         FROM nutrition_logs nl
         JOIN foods f ON nl.food_id = f.id
-        WHERE nl.user_id = ${params.userId} AND nl.logged_at >= ${startDate}
+        WHERE nl.user_id = ${auth.userID} AND nl.logged_at >= ${startDate}
         GROUP BY DATE(nl.logged_at)
       ) daily_totals
     `;
@@ -64,14 +65,14 @@ export const getNutritionStats = api<GetNutritionStatsParams, NutritionStats>(
     const totalMeals = await nutritionDB.queryRow<{totalMealsLogged: number}>`
       SELECT COUNT(*)::integer as "totalMealsLogged"
       FROM nutrition_logs 
-      WHERE user_id = ${params.userId} AND logged_at >= ${startDate}
+      WHERE user_id = ${auth.userID} AND logged_at >= ${startDate}
     `;
 
     const mostMealType = await nutritionDB.queryRow<{mostLoggedMealType: string}>`
       SELECT COALESCE(
         (SELECT meal_type
          FROM nutrition_logs 
-         WHERE user_id = ${params.userId} AND logged_at >= ${startDate}
+         WHERE user_id = ${auth.userID} AND logged_at >= ${startDate}
          GROUP BY meal_type
          ORDER BY COUNT(*) DESC
          LIMIT 1), 'breakfast'
@@ -83,7 +84,7 @@ export const getNutritionStats = api<GetNutritionStatsParams, NutritionStats>(
       SELECT f.name as "foodName", COUNT(*)::integer as count
       FROM nutrition_logs nl
       JOIN foods f ON nl.food_id = f.id
-      WHERE nl.user_id = ${params.userId} AND nl.logged_at >= ${startDate}
+      WHERE nl.user_id = ${auth.userID} AND nl.logged_at >= ${startDate}
       GROUP BY f.name
       ORDER BY COUNT(*) DESC
       LIMIT 5
@@ -104,7 +105,7 @@ export const getNutritionStats = api<GetNutritionStatsParams, NutritionStats>(
         COALESCE(SUM(f.fat_per_100g * nl.serving_size_grams / 100), 0)::integer as fat
       FROM nutrition_logs nl
       JOIN foods f ON nl.food_id = f.id
-      WHERE nl.user_id = ${params.userId} AND nl.logged_at >= ${last7Days}
+      WHERE nl.user_id = ${auth.userID} AND nl.logged_at >= ${last7Days}
       GROUP BY DATE(nl.logged_at)
       ORDER BY DATE(nl.logged_at) DESC
       LIMIT 7

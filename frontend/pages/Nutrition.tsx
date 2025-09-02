@@ -5,23 +5,22 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Apple, Target, TrendingUp } from 'lucide-react';
-import backend from '~backend/client';
-import { formatDate } from '../utils/date';
+import { useAuth } from '../contexts/AuthContext';
 import { LogFoodDialog } from '../components/LogFoodDialog';
 
 export function Nutrition() {
   const [showLogDialog, setShowLogDialog] = useState(false);
-  const userId = 1;
+  const { backend } = useAuth();
   const today = new Date().toISOString().split('T')[0];
 
   const { data: todayLogs } = useQuery({
-    queryKey: ['dailyLogs', userId, today],
-    queryFn: () => backend.nutrition.getDailyLogs({ userId, date: today }),
+    queryKey: ['dailyLogs', today],
+    queryFn: () => backend.nutrition.getDailyLogs({ date: today }),
   });
 
   const { data: nutritionStats } = useQuery({
-    queryKey: ['nutritionStats', userId],
-    queryFn: () => backend.analytics.getNutritionStats({ userId, days: 7 }),
+    queryKey: ['nutritionStats'],
+    queryFn: () => backend.analytics.getNutritionStats({ days: 7 }),
   });
 
   const mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
@@ -214,7 +213,6 @@ export function Nutrition() {
       <LogFoodDialog
         open={showLogDialog}
         onOpenChange={setShowLogDialog}
-        userId={userId}
       />
     </div>
   );

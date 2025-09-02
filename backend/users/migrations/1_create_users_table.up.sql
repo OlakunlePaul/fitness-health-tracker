@@ -1,6 +1,6 @@
 CREATE TABLE users (
-  id BIGSERIAL PRIMARY KEY,
-  email VARCHAR(255) UNIQUE NOT NULL,
+  id VARCHAR(36) PRIMARY KEY,
+  email VARCHAR(255) NOT NULL,
   name VARCHAR(255) NOT NULL,
   age INTEGER,
   weight_kg DOUBLE PRECISION,
@@ -11,4 +11,4 @@ CREATE TABLE users (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_id ON users(id);

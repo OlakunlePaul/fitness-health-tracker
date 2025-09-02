@@ -1,4 +1,5 @@
 import { api } from "encore.dev/api";
+import { getAuthData } from "~encore/auth";
 import { workoutsDB } from "./db";
 
 export interface TemplateExercise {
@@ -12,7 +13,6 @@ export interface TemplateExercise {
 }
 
 export interface CreateTemplateRequest {
-  userId: number;
   name: string;
   description?: string;
   category?: string;
@@ -22,7 +22,7 @@ export interface CreateTemplateRequest {
 
 export interface WorkoutTemplate {
   id: number;
-  userId: number;
+  userId: string;
   name: string;
   description?: string;
   category?: string;
@@ -31,16 +31,18 @@ export interface WorkoutTemplate {
   updatedAt: Date;
 }
 
-// Creates a new workout template.
+// Creates a new workout template for the authenticated user.
 export const createTemplate = api<CreateTemplateRequest, WorkoutTemplate>(
-  { expose: true, method: "POST", path: "/workouts/templates" },
+  { expose: true, method: "POST", path: "/workouts/templates", auth: true },
   async (req) => {
+    const auth = getAuthData()!;
+    
     await workoutsDB.exec`BEGIN`;
     
     try {
       const template = await workoutsDB.queryRow<WorkoutTemplate>`
         INSERT INTO workout_templates (user_id, name, description, category, estimated_duration_minutes)
-        VALUES (${req.userId}, ${req.name}, ${req.description}, ${req.category}, ${req.estimatedDurationMinutes})
+        VALUES (${auth.userID}, ${req.name}, ${req.description}, ${req.category}, ${req.estimatedDurationMinutes})
         RETURNING id, user_id as "userId", name, description, category, 
                   estimated_duration_minutes as "estimatedDurationMinutes",
                   created_at as "createdAt", updated_at as "updatedAt"

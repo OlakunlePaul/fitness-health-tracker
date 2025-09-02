@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Plus, X, Save } from 'lucide-react';
-import backend from '~backend/client';
+import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import type { Exercise } from '~backend/workouts/list_exercises';
 import type { CreateTemplateRequest, TemplateExercise } from '~backend/workouts/create_template';
@@ -18,10 +18,9 @@ interface CreateWorkoutDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   exercises: Exercise[];
-  userId: number;
 }
 
-export function CreateWorkoutDialog({ open, onOpenChange, exercises, userId }: CreateWorkoutDialogProps) {
+export function CreateWorkoutDialog({ open, onOpenChange, exercises }: CreateWorkoutDialogProps) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -31,11 +30,12 @@ export function CreateWorkoutDialog({ open, onOpenChange, exercises, userId }: C
   const [selectedExercises, setSelectedExercises] = useState<TemplateExercise[]>([]);
   const [showExerciseSelect, setShowExerciseSelect] = useState(false);
 
+  const { backend } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const createTemplateMutation = useMutation({
-    mutationFn: backend.workouts.createTemplate,
+    mutationFn: (data: CreateTemplateRequest) => backend.workouts.createTemplate(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workoutTemplates'] });
       onOpenChange(false);
@@ -79,7 +79,6 @@ export function CreateWorkoutDialog({ open, onOpenChange, exercises, userId }: C
     }
 
     const request: CreateTemplateRequest = {
-      userId,
       name: formData.name,
       description: formData.description || undefined,
       category: formData.category || undefined,

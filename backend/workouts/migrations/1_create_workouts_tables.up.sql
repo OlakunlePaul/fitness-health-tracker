@@ -1,6 +1,6 @@
 CREATE TABLE workout_templates (
   id BIGSERIAL PRIMARY KEY,
-  user_id BIGINT NOT NULL,
+  user_id VARCHAR(36) NOT NULL,
   name VARCHAR(255) NOT NULL,
   description TEXT,
   category VARCHAR(100),
@@ -34,7 +34,7 @@ CREATE TABLE template_exercises (
 
 CREATE TABLE workout_sessions (
   id BIGSERIAL PRIMARY KEY,
-  user_id BIGINT NOT NULL,
+  user_id VARCHAR(36) NOT NULL,
   template_id BIGINT REFERENCES workout_templates(id),
   name VARCHAR(255) NOT NULL,
   started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -1,9 +1,16 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Activity, Home, Dumbbell, Apple, BarChart3, User, LayoutDashboard } from 'lucide-react';
+import { Activity, Home, Dumbbell, Apple, BarChart3, User, LayoutDashboard, LogIn, LogOut } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useAuth } from '../contexts/AuthContext';
 
-const navigation = [
+const publicNavigation = [
   { name: 'Home', href: '/', icon: Home },
+  { name: 'Login', href: '/login', icon: LogIn },
+  { name: 'Sign Up', href: '/signup', icon: User },
+];
+
+const authenticatedNavigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Workouts', href: '/workouts', icon: Dumbbell },
   { name: 'Nutrition', href: '/nutrition', icon: Apple },
@@ -13,6 +20,9 @@ const navigation = [
 
 export function Navigation() {
   const location = useLocation();
+  const { user, logout } = useAuth();
+
+  const navigation = user ? authenticatedNavigation : publicNavigation;
 
   return (
     <nav className="bg-card border-b">
@@ -23,7 +33,7 @@ export function Navigation() {
             <span className="text-xl font-bold text-foreground">FitTracker</span>
           </Link>
           
-          <div className="flex space-x-4">
+          <div className="flex items-center space-x-4">
             {navigation.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.href;
@@ -44,6 +54,18 @@ export function Navigation() {
                 </Link>
               );
             })}
+            
+            {user && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={logout}
+                className="flex items-center space-x-2"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Logout</span>
+              </Button>
+            )}
           </div>
         </div>
       </div>

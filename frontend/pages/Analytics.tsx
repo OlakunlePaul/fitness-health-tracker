@@ -3,19 +3,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart3, TrendingUp, Activity, Target, Calendar, Clock } from 'lucide-react';
-import backend from '~backend/client';
+import { useAuth } from '../contexts/AuthContext';
 
 export function Analytics() {
-  const userId = 1;
+  const { backend } = useAuth();
 
   const { data: workoutStats } = useQuery({
-    queryKey: ['workoutStats', userId, 30],
-    queryFn: () => backend.analytics.getWorkoutStats({ userId, days: 30 }),
+    queryKey: ['workoutStats', 30],
+    queryFn: () => backend.analytics.getWorkoutStats({ days: 30 }),
   });
 
   const { data: nutritionStats } = useQuery({
-    queryKey: ['nutritionStats', userId, 30],
-    queryFn: () => backend.analytics.getNutritionStats({ userId, days: 30 }),
+    queryKey: ['nutritionStats', 30],
+    queryFn: () => backend.analytics.getNutritionStats({ days: 30 }),
   });
 
   return (

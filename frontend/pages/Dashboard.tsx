@@ -5,46 +5,46 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Dumbbell, Apple, Target, TrendingUp, Clock, Flame, Calendar, Activity, Plus, Play, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import backend from '~backend/client';
+import { useAuth } from '../contexts/AuthContext';
 import { formatDate, formatDuration } from '../utils/date';
 
 export function Dashboard() {
   const today = new Date().toISOString().split('T')[0];
-  const userId = 1;
+  const { backend } = useAuth();
 
   const { data: user } = useQuery({
-    queryKey: ['user', userId],
-    queryFn: () => backend.users.get({ id: userId }),
+    queryKey: ['user'],
+    queryFn: () => backend.users.get(),
     retry: false,
   });
 
   const { data: workoutStats } = useQuery({
-    queryKey: ['workoutStats', userId],
-    queryFn: () => backend.analytics.getWorkoutStats({ userId, days: 7 }),
+    queryKey: ['workoutStats'],
+    queryFn: () => backend.analytics.getWorkoutStats({ days: 7 }),
     enabled: !!user,
   });
 
   const { data: nutritionStats } = useQuery({
-    queryKey: ['nutritionStats', userId],
-    queryFn: () => backend.analytics.getNutritionStats({ userId, days: 7 }),
+    queryKey: ['nutritionStats'],
+    queryFn: () => backend.analytics.getNutritionStats({ days: 7 }),
     enabled: !!user,
   });
 
   const { data: recentSessions } = useQuery({
-    queryKey: ['recentSessions', userId],
-    queryFn: () => backend.workouts.listSessions({ userId }),
+    queryKey: ['recentSessions'],
+    queryFn: () => backend.workouts.listSessions(),
     enabled: !!user,
   });
 
   const { data: todayNutrition } = useQuery({
-    queryKey: ['todayNutrition', userId, today],
-    queryFn: () => backend.nutrition.getDailyLogs({ userId, date: today }),
+    queryKey: ['todayNutrition', today],
+    queryFn: () => backend.nutrition.getDailyLogs({ date: today }),
     enabled: !!user,
   });
 
   const { data: workoutTemplates } = useQuery({
-    queryKey: ['workoutTemplates', userId],
-    queryFn: () => backend.workouts.listTemplates({ userId }),
+    queryKey: ['workoutTemplates'],
+    queryFn: () => backend.workouts.listTemplates(),
     enabled: !!user,
   });
 

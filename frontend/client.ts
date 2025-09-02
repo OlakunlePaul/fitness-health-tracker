@@ -34,6 +34,7 @@ const BROWSER = typeof globalThis === "object" && ("window" in globalThis);
  */
 export class Client {
     public readonly analytics: analytics.ServiceClient
+    public readonly auth: auth.ServiceClient
     public readonly fitness: fitness.ServiceClient
     public readonly nutrition: nutrition.ServiceClient
     public readonly users: users.ServiceClient
@@ -53,6 +54,7 @@ export class Client {
         this.options = options ?? {}
         const base = new BaseClient(this.target, this.options)
         this.analytics = new analytics.ServiceClient(base)
+        this.auth = new auth.ServiceClient(base)
         this.fitness = new fitness.ServiceClient(base)
         this.nutrition = new nutrition.ServiceClient(base)
         this.users = new users.ServiceClient(base)
@@ -105,7 +107,7 @@ export namespace analytics {
         }
 
         /**
-         * Retrieves nutrition statistics for a user.
+         * Retrieves nutrition statistics for the authenticated user.
          */
         public async getNutritionStats(params: RequestType<typeof api_analytics_nutrition_stats_getNutritionStats>): Promise<ResponseType<typeof api_analytics_nutrition_stats_getNutritionStats>> {
             // Convert our params into the objects we need for the request
@@ -114,12 +116,12 @@ export namespace analytics {
             })
 
             // Now make the actual call to the API
-            const resp = await this.baseClient.callTypedAPI(`/analytics/nutrition/${encodeURIComponent(params.userId)}`, {query, method: "GET", body: undefined})
+            const resp = await this.baseClient.callTypedAPI(`/analytics/nutrition`, {query, method: "GET", body: undefined})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_analytics_nutrition_stats_getNutritionStats>
         }
 
         /**
-         * Retrieves workout statistics for a user.
+         * Retrieves workout statistics for the authenticated user.
          */
         public async getWorkoutStats(params: RequestType<typeof api_analytics_workout_stats_getWorkoutStats>): Promise<ResponseType<typeof api_analytics_workout_stats_getWorkoutStats>> {
             // Convert our params into the objects we need for the request
@@ -128,8 +130,45 @@ export namespace analytics {
             })
 
             // Now make the actual call to the API
-            const resp = await this.baseClient.callTypedAPI(`/analytics/workouts/${encodeURIComponent(params.userId)}`, {query, method: "GET", body: undefined})
+            const resp = await this.baseClient.callTypedAPI(`/analytics/workouts`, {query, method: "GET", body: undefined})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_analytics_workout_stats_getWorkoutStats>
+        }
+    }
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
+import { login as api_auth_login_login } from "~backend/auth/login";
+import { signup as api_auth_signup_signup } from "~backend/auth/signup";
+
+export namespace auth {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.login = this.login.bind(this)
+            this.signup = this.signup.bind(this)
+        }
+
+        /**
+         * Logs in a user with email and password.
+         */
+        public async login(params: RequestType<typeof api_auth_login_login>): Promise<ResponseType<typeof api_auth_login_login>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/auth/login`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_auth_login_login>
+        }
+
+        /**
+         * Creates a new user account.
+         */
+        public async signup(params: RequestType<typeof api_auth_signup_signup>): Promise<ResponseType<typeof api_auth_signup_signup>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/auth/signup`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_auth_signup_signup>
         }
     }
 }
@@ -295,16 +334,16 @@ export namespace nutrition {
         }
 
         /**
-         * Retrieves nutrition logs for a specific date.
+         * Retrieves nutrition logs for a specific date for the authenticated user.
          */
-        public async getDailyLogs(params: { userId: number, date: string }): Promise<ResponseType<typeof api_nutrition_get_daily_logs_getDailyLogs>> {
+        public async getDailyLogs(params: { date: string }): Promise<ResponseType<typeof api_nutrition_get_daily_logs_getDailyLogs>> {
             // Now make the actual call to the API
-            const resp = await this.baseClient.callTypedAPI(`/nutrition/logs/${encodeURIComponent(params.userId)}/${encodeURIComponent(params.date)}`, {method: "GET", body: undefined})
+            const resp = await this.baseClient.callTypedAPI(`/nutrition/logs/${encodeURIComponent(params.date)}`, {method: "GET", body: undefined})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_nutrition_get_daily_logs_getDailyLogs>
         }
 
         /**
-         * Logs a food item for a user.
+         * Logs a food item for the authenticated user.
          */
         public async logFood(params: RequestType<typeof api_nutrition_log_food_logFood>): Promise<ResponseType<typeof api_nutrition_log_food_logFood>> {
             // Now make the actual call to the API
@@ -355,11 +394,11 @@ export namespace users {
         }
 
         /**
-         * Retrieves a user profile by ID.
+         * Retrieves the current user's profile.
          */
-        public async get(params: { id: number }): Promise<ResponseType<typeof api_users_get_get>> {
+        public async get(): Promise<ResponseType<typeof api_users_get_get>> {
             // Now make the actual call to the API
-            const resp = await this.baseClient.callTypedAPI(`/users/${encodeURIComponent(params.id)}`, {method: "GET", body: undefined})
+            const resp = await this.baseClient.callTypedAPI(`/users/me`, {method: "GET", body: undefined})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_users_get_get>
         }
     }
@@ -389,7 +428,7 @@ export namespace workouts {
         }
 
         /**
-         * Creates a new workout template.
+         * Creates a new workout template for the authenticated user.
          */
         public async createTemplate(params: RequestType<typeof api_workouts_create_template_createTemplate>): Promise<ResponseType<typeof api_workouts_create_template_createTemplate>> {
             // Now make the actual call to the API
@@ -407,25 +446,25 @@ export namespace workouts {
         }
 
         /**
-         * Retrieves all workout sessions for a user.
+         * Retrieves all workout sessions for the authenticated user.
          */
-        public async listSessions(params: { userId: number }): Promise<ResponseType<typeof api_workouts_list_sessions_listSessions>> {
+        public async listSessions(): Promise<ResponseType<typeof api_workouts_list_sessions_listSessions>> {
             // Now make the actual call to the API
-            const resp = await this.baseClient.callTypedAPI(`/workouts/sessions/${encodeURIComponent(params.userId)}`, {method: "GET", body: undefined})
+            const resp = await this.baseClient.callTypedAPI(`/workouts/sessions`, {method: "GET", body: undefined})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_workouts_list_sessions_listSessions>
         }
 
         /**
-         * Retrieves all workout templates for a user.
+         * Retrieves all workout templates for the authenticated user.
          */
-        public async listTemplates(params: { userId: number }): Promise<ResponseType<typeof api_workouts_list_templates_listTemplates>> {
+        public async listTemplates(): Promise<ResponseType<typeof api_workouts_list_templates_listTemplates>> {
             // Now make the actual call to the API
-            const resp = await this.baseClient.callTypedAPI(`/workouts/templates/${encodeURIComponent(params.userId)}`, {method: "GET", body: undefined})
+            const resp = await this.baseClient.callTypedAPI(`/workouts/templates`, {method: "GET", body: undefined})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_workouts_list_templates_listTemplates>
         }
 
         /**
-         * Starts a new workout session.
+         * Starts a new workout session for the authenticated user.
          */
         public async startSession(params: RequestType<typeof api_workouts_start_session_startSession>): Promise<ResponseType<typeof api_workouts_start_session_startSession>> {
             // Now make the actual call to the API

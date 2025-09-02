@@ -1,19 +1,17 @@
 import { api } from "encore.dev/api";
+import { getAuthData } from "~encore/auth";
 import { workoutsDB } from "./db";
 import type { WorkoutSession } from "./start_session";
-
-interface ListSessionsParams {
-  userId: number;
-}
 
 export interface ListSessionsResponse {
   sessions: WorkoutSession[];
 }
 
-// Retrieves all workout sessions for a user.
-export const listSessions = api<ListSessionsParams, ListSessionsResponse>(
-  { expose: true, method: "GET", path: "/workouts/sessions/:userId" },
-  async (params) => {
+// Retrieves all workout sessions for the authenticated user.
+export const listSessions = api<void, ListSessionsResponse>(
+  { expose: true, method: "GET", path: "/workouts/sessions", auth: true },
+  async () => {
+    const auth = getAuthData()!;
     const sessions: WorkoutSession[] = [];
     
     for await (const row of workoutsDB.query<WorkoutSession>`
@@ -22,7 +20,7 @@ export const listSessions = api<ListSessionsParams, ListSessionsResponse>(
              duration_minutes as "durationMinutes", notes,
              created_at as "createdAt"
       FROM workout_sessions 
-      WHERE user_id = ${params.userId}
+      WHERE user_id = ${auth.userID}
       ORDER BY started_at DESC
       LIMIT 50
     `) {

@@ -15,7 +15,7 @@ CREATE TABLE foods (
 
 CREATE TABLE nutrition_logs (
   id BIGSERIAL PRIMARY KEY,
-  user_id BIGINT NOT NULL,
+  user_id VARCHAR(36) NOT NULL,
   food_id BIGINT NOT NULL REFERENCES foods(id),
   serving_size_grams DOUBLE PRECISION NOT NULL,
   meal_type VARCHAR(50) NOT NULL,
@@ -26,7 +26,7 @@ CREATE TABLE nutrition_logs (
 
 CREATE TABLE daily_nutrition_goals (
   id BIGSERIAL PRIMARY KEY,
-  user_id BIGINT NOT NULL,
+  user_id VARCHAR(36) NOT NULL,
   calories_goal DOUBLE PRECISION NOT NULL,
   protein_goal DOUBLE PRECISION NOT NULL,
   carbs_goal DOUBLE PRECISION NOT NULL,

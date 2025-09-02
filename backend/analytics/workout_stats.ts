@@ -1,10 +1,10 @@
 import { api } from "encore.dev/api";
+import { getAuthData } from "~encore/auth";
 import { SQLDatabase } from "encore.dev/storage/sqldb";
 
 const workoutsDB = SQLDatabase.named("workouts");
 
 interface GetWorkoutStatsParams {
-  userId: number;
   days?: number;
 }
 
@@ -21,10 +21,11 @@ export interface WorkoutStats {
   }>;
 }
 
-// Retrieves workout statistics for a user.
+// Retrieves workout statistics for the authenticated user.
 export const getWorkoutStats = api<GetWorkoutStatsParams, WorkoutStats>(
-  { expose: true, method: "GET", path: "/analytics/workouts/:userId" },
+  { expose: true, method: "GET", path: "/analytics/workouts", auth: true },
   async (params) => {
+    const auth = getAuthData()!;
     const days = params.days || 30;
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
@@ -35,7 +36,7 @@ export const getWorkoutStats = api<GetWorkoutStatsParams, WorkoutStats>(
         COALESCE(SUM(duration_minutes), 0)::integer as "totalDuration",
         COALESCE(AVG(duration_minutes), 0)::integer as "averageDuration"
       FROM workout_sessions 
-      WHERE user_id = ${params.userId} 
+      WHERE user_id = ${auth.userID} 
         AND completed_at IS NOT NULL
         AND started_at >= ${startDate}
     `;
@@ -43,7 +44,7 @@ export const getWorkoutStats = api<GetWorkoutStatsParams, WorkoutStats>(
     const weekStats = await workoutsDB.queryRow<{workoutsThisWeek: number}>`
       SELECT COUNT(*)::integer as "workoutsThisWeek"
       FROM workout_sessions 
-      WHERE user_id = ${params.userId} 
+      WHERE user_id = ${auth.userID} 
         AND completed_at IS NOT NULL
         AND started_at >= NOW() - INTERVAL '7 days'
     `;
@@ -51,7 +52,7 @@ export const getWorkoutStats = api<GetWorkoutStatsParams, WorkoutStats>(
     const monthStats = await workoutsDB.queryRow<{workoutsThisMonth: number}>`
       SELECT COUNT(*)::integer as "workoutsThisMonth"
       FROM workout_sessions 
-      WHERE user_id = ${params.userId} 
+      WHERE user_id = ${auth.userID} 
         AND completed_at IS NOT NULL
         AND started_at >= NOW() - INTERVAL '30 days'
     `;
@@ -60,7 +61,7 @@ export const getWorkoutStats = api<GetWorkoutStatsParams, WorkoutStats>(
       SELECT COALESCE(
         (SELECT TO_CHAR(started_at, 'Day')
          FROM workout_sessions 
-         WHERE user_id = ${params.userId} 
+         WHERE user_id = ${auth.userID} 
            AND completed_at IS NOT NULL
            AND started_at >= ${startDate}
          GROUP BY EXTRACT(DOW FROM started_at), TO_CHAR(started_at, 'Day')
@@ -75,7 +76,7 @@ export const getWorkoutStats = api<GetWorkoutStatsParams, WorkoutStats>(
       FROM session_exercises se
       JOIN exercises e ON se.exercise_id = e.id
       JOIN workout_sessions ws ON se.session_id = ws.id
-      WHERE ws.user_id = ${params.userId}
+      WHERE ws.user_id = ${auth.userID}
         AND ws.completed_at IS NOT NULL
         AND ws.started_at >= ${startDate}
       GROUP BY e.name

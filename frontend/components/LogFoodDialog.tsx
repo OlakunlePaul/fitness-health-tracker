@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Search, Plus } from 'lucide-react';
-import backend from '~backend/client';
+import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import type { Food } from '~backend/nutrition/search_foods';
 import type { LogFoodRequest } from '~backend/nutrition/log_food';
@@ -15,15 +15,15 @@ import type { LogFoodRequest } from '~backend/nutrition/log_food';
 interface LogFoodDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  userId: number;
 }
 
-export function LogFoodDialog({ open, onOpenChange, userId }: LogFoodDialogProps) {
+export function LogFoodDialog({ open, onOpenChange }: LogFoodDialogProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [servingSize, setServingSize] = useState('100');
   const [mealType, setMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('breakfast');
 
+  const { backend } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -34,7 +34,7 @@ export function LogFoodDialog({ open, onOpenChange, userId }: LogFoodDialogProps
   });
 
   const logFoodMutation = useMutation({
-    mutationFn: backend.nutrition.logFood,
+    mutationFn: (data: LogFoodRequest) => backend.nutrition.logFood(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dailyLogs'] });
       onOpenChange(false);
@@ -74,7 +74,6 @@ export function LogFoodDialog({ open, onOpenChange, userId }: LogFoodDialogProps
     }
 
     const request: LogFoodRequest = {
-      userId,
       foodId: selectedFood.id,
       servingSizeGrams: parseFloat(servingSize),
       mealType,
