@@ -26,7 +26,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Create authenticated backend client
   const authenticatedBackend = token 
-    ? backend.with({ auth: { authorization: `Bearer ${token}` } })
+    ? backend.with({ 
+        requestInit: { 
+          headers: { 
+            Authorization: `Bearer ${token}` 
+          } 
+        } 
+      })
     : backend;
 
   useEffect(() => {
