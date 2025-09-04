@@ -32,8 +32,7 @@
   },
   "include": [
     "**/*.ts",
-    "**/*.tsx",
-    "vite-env.d.ts"
+    "**/*.tsx"
   ],
   "exclude": [
     "node_modules"
